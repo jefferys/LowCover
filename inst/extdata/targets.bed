@@ -1,0 +1,6 @@
+chr1	10	100	gene_A
+chr1	150	250	gene_A
+chr1	200	300	gene_B
+chr1	290	400	gene_C
+chr2	10	50	gene_D
+chr2	40	100	gene_D

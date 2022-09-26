@@ -1,0 +1,6 @@
+seqnames	start	end	strand	score	id
+chr1	1	5	*	1.1	bob
+chr1	11	20	+	2.2	sue
+chr1	11	20	+	3.3	tom
+chr2	1	249000000	*	4.4	april
+chr10	16	15	-	5.5	alice

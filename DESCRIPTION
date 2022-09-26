@@ -1,0 +1,19 @@
+Package: lowcover
+Title: Low coverage reporting
+Version: 0.0.0
+Authors@R: 
+    person("Stuart R.", "Jefferys", , "srjefferys@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-6259-085X"))
+Description: Reports low coverage genomic regions based on mosdepth.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.1
+Imports: 
+    GenomicRanges
+Suggests: 
+    spelling,
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
+Language: en-US
