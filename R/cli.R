@@ -136,7 +136,6 @@ assertOptOutDir <- function( optName, dir, force= NA ) {
 #' @return Exits with error or returns TRUE
 #' @export
 #'
-#' @examples
 assertOptOutFile <- function( optName, file, force= NA ) {
 	if (file.exists( file )) {
 		if (is.na(force)) {
@@ -257,17 +256,23 @@ ensureOpt_summaryFileNoY <- function( opts ) {
 
 #' Validate CLI options
 #'
-#' Validates (and possibly transforms) command line options. Halts with error on the first invalid option
-#' found, or returns a list of valid options and their post-validation values. The list of raw
-#' options, including any invalid opts, is included in the retured list as `rawOpts` and returns a list of valid options.How unknown options are handled depends on
-#' `unvalidated`. 
-#' @param rawOpts 
-#' @param unvalidated 
+#' Validates (and possibly transforms) command line options. Halts with error on
+#' the first invalid option found, or returns a list of valid options and their
+#' post-validation values. The list of raw options, including any invalid opts,
+#' is included in the returned list as `rawOpts` and returns a list of valid
+#' options.How unknown options are handled depends on `unvalidated`.
+#' @param rawOpts The unvalidated options list
+#' @param unvalidated What to do with unvalidated options:
 #'
-#' @return
-#' @export
+#' - `warning` - By default if an option is not validated, it is used as is, but
+#' a warning will be generated.
+#' - `error`  - Unvalidated options will trigger an error.
+#' - `ok` - Unvalidated options will silently be used as is.
+#' - `ignore` - Unvalidated options will silently be ignored.
 #'
-#' @examples
+#' @return The list of validated options, including any unvalidated options if
+#'   `unvalidated` is "warning" or "ok".
+#' 
 validateOptions <- function(
 	rawOpts, unvalidated= c("warning", "error", "ok", "ignore" )
 ) {
@@ -324,33 +329,33 @@ validateOptions <- function(
 }
 
 #' Parse the command line options and arguments.
-#' 
+#'
 #' Returns an unvalidated list of options by long name. (-h,--help) and
-#' (-V,--version) are parsed manually, so only help=TRUE will be present if
-#' help specified, or if no help asked for but versions is specified, only
-#' version=TRUE will be present. 
+#' (-V,--version) are parsed manually, so only help=TRUE will be present if help
+#' specified, or if no help asked for but versions is specified, only
+#' version=TRUE will be present.
 #'
 #' @param args The vector or command line tokens to parse, defaults to
-#' retrieving them itself.
+#'   retrieving them itself.
 #'
-#' @return A list of the parsed command line options and arguments. Contains
-#' an un-nameed option  [1]
-#'
-#' @examples
+#' @return A list of the parsed command line options and arguments. Contains an
+#'   unnamed option as the first element due to undocumented behavior in
+#'   argparser.
+#'   
 parseCLI <- function( args= commandArgs( trailingOnly= TRUE )) {
-	myPackage <- packageName()
-	desc <- packageDescription( myPackage )
+	myPackage <- utils::packageName()
+	desc <- utils::packageDescription( myPackage )
 	
 	parser <- initParser( desc )
 	parser <- defineInterface( parser )
 	
 	# Hack: Don't want to call "quit()" after printing help message as argparse
-	# will if allowed to handle help itself. So have to pre-parse and handle "-h"
+	# will if allowed to handle help itself. So have to preparse and handle "-h"
 	# or "--help". If specified, the help message that argparse would normally
 	# generate is saved as the value of the `help` option, and this is returned.
 	wantHelp <- any(args %in% c("-h", "--help"))
 	if (wantHelp) {
-		helpMessage <- paste( capture.output( print(parser), type="message" ), collapse= "\n" ) 
+		helpMessage <- paste( utils::capture.output( print(parser), type="message" ), collapse= "\n" ) 
 		return( list( "help"= helpMessage ))
 	}
 
@@ -358,7 +363,7 @@ parseCLI <- function( args= commandArgs( trailingOnly= TRUE )) {
 	# printing a custom version message to STDOUT.
 	wantVersion <- any(args %in% c("-V", "--version"))
 	if (wantVersion) {
-		versionMessage <- paste0( packageName(),  " ", desc$Version ) 
+		versionMessage <- paste0( utils::packageName(),  " ", desc$Version ) 
 		return( list( "version"= versionMessage ))
 	}
 	

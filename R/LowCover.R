@@ -25,6 +25,15 @@ lowcoverStats  <- function( targets, regions, chrY= NA ) {
 	)
 }
 
+#' Run lowcover as an application
+#'
+#' @param args Character vector of command line parameters, by default will
+#' get them from the command line used to start the R session in which this
+#' runs in the usual way.
+#'
+#' @return N/A - run as an app that saves everything to files
+#'
+#' @export
 lowcoverApp <- function( args= commandArgs( trailingOnly= TRUE )) {
 	opts <- parseCLI( args )
 	if ( length(opts$help) > 0) {
@@ -46,14 +55,14 @@ lowcoverApp <- function( args= commandArgs( trailingOnly= TRUE )) {
 	
 	saveBed( regionsGR, opts$regionsFile, strand= FALSE )
 	badGenes <- unique( regionsGR$geneName )
-	if (is.null(badGenes) || is.na(badGenes) || length(badGenes) < 1) {
+	if (is.null(badGenes) || (length(badGenes) == 1 && is.na(badGenes)) || length(badGenes) < 1) {
 		file.create( opts$badGenesFile )
 	}
 	else {
 		writeLines( badGenes, opts$badGenesFile )
 	}
 	goodGenes <- setdiff( unique( targetGR$geneName), badGenes )
-	if (is.null(goodGenes) || is.na(goodGenes) || length(goodGenes) < 1) {
+	if (is.null(goodGenes) || (length(goodGenes) == 1 && is.na(goodGenes)) || length(goodGenes) < 1) {
 		file.create( opts$goodGenesFile )
 	}
 	else {

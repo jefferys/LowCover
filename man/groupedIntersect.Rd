@@ -21,7 +21,7 @@ simplify is TRUE and a concatenated GRanges object will be returned, with
 a metadata column giving the group value named based on the format of 'group'
 \itemize{
 \item vector: column will be named "group".
-\item list: column will be named names(group)\link{1}.
+\item list: column will be named \code{names(group)[1]}.
 \item column name: column will have the same name.
 }}
 }

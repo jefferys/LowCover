@@ -52,7 +52,7 @@
 #' 
 #' @export
 loadBed <- function( file, colnames= c("seqname", "start", "end"), oneBased= FALSE, ... ) {
-	if (! is(file, "connection") && ! file.exists(file)) {
+	if (! methods::is(file, "connection") && ! file.exists(file)) {
 		stop("Error: Can't see the file '", file, "'.", call.= FALSE)
 	}
 	bedDat <- utils::read.table( file, row.names= NULL, ... )
@@ -114,5 +114,5 @@ saveBed <- function( x, file, strand= TRUE, oneBased= FALSE, col.names= FALSE, .
 	if ( ! strand ) {
 		df$strand <- NULL
 	}
-	write.table( df, file, quote=FALSE, sep= "\t", row.names=FALSE, col.names= col.names, ... )
+	utils::write.table( df, file, quote=FALSE, sep= "\t", row.names=FALSE, col.names= col.names, ... )
 }
