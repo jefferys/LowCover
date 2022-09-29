@@ -4,10 +4,6 @@ initParser <- function( desc ) {
 
 defineInterface <- function( parser ) {
 	parser <- argparser::add_argument(
-		parser, "--help", short= "-h", flag= TRUE,
-		help= "Show this help message and exit."
-	)
-	parser <- argparser::add_argument(
 		parser, "--version", short= "-V", flag= TRUE,
 		help= "Print version info to stderr and exit."
 	)
