@@ -368,7 +368,7 @@ describe( "groupedIntersect()", {
 		})
 	})
 	describe( "Corner cases and error handling", {
-		describe( "small GRanges objects", {
+		describe( "Small GRanges objects", {
 			emptyGR <- GenomicRanges::GRanges()
 			emptyGRL <- GenomicRanges::GRangesList()
 			it( "returns empty ganges if either or both inputs empty", {
@@ -418,6 +418,11 @@ describe( "groupedIntersect()", {
 				expect_error( groupedIntersect( grNoneQ, grNoneT, list( x="a", y="b", z="c"), simplify= TRUE ), wantErrRE )
 				expect_error( groupedIntersect( grNoneQ, grNoneT, list( c( "a", "b", "c" )), simplify= FALSE ), wantErrRE )
 			})
+		})
+		describe( "Bad GRanges objects", {
+			wantErrRE <- "Don't know how to intersect anything except 'GRanges' objects\\."
+			expect_error( groupedIntersect( grNoneQ, c("oops", "Not", "Granges"), group="noSuchGroup", simplify= FALSE ), wantErrRE )
+			expect_error( groupedIntersect( 42, grNoneT, group="noSuchGroup", simplify= FALSE ), wantErrRE )
 		})
 	})
 })

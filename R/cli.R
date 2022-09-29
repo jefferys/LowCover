@@ -1,5 +1,5 @@
 initParser <- function( desc ) {
-	argparser::arg_parser( desc$Title, desc$Package, hide.opts= TRUE )
+	argparser::arg_parser( paste(desc$Title, desc$Description, sep="\n\n"), desc$Package, hide.opts= TRUE )
 }
 
 defineInterface <- function( parser ) {
@@ -20,6 +20,10 @@ defineInterface <- function( parser ) {
 		help= "Comma separated string of tags identifying low coverage regions."
 	)
 	parser <- argparser::add_argument(
+		parser, "--chrY", short="-y", default="NA",
+		help= "Name of 'Y' chromosome, if want to filter by sex."
+	)
+	parser <- argparser::add_argument(
 		parser, "--force", short= "-f", flag= TRUE,
 		help= "Create any non-existing directories and overwrite any existing files."
 	)
@@ -28,16 +32,20 @@ defineInterface <- function( parser ) {
 		help= "Bed4 file of regions with low coverage (column #4 = gene name)"
 	)
 	parser <- argparser::add_argument(
+		parser, "--badGenesFile", short= "-b", default="lowcover.badgenes.txt",
+		help= "Text file listing  genes with at least 1 base with low coverage (one per line)"
+	)
+	parser <- argparser::add_argument(
 		parser, "--goodGenesFile", short= "-g", default="lowcover.goodgenes.txt",
 		help= "Text file listing genes with no low covage (one per line)"
 	)
 	parser <- argparser::add_argument(
 		parser, "--summaryFile", short= "-s", default="lowcover.summary.tsv",
-		help= "Text file listing genes with no low covage (one per line)"
+		help= "Stats table"
 	)
 	parser <- argparser::add_argument(
-		parser, "--badGenesFile", short= "-b", default="lowcover.badgenes.txt",
-		help= "Text file listing  genes with at least 1 base with low coverage (one per line)"
+		parser, "--summaryFileNoY", short= "-S", default="lowcover.summaryNoY.tsv",
+		help= "Stats table ignoring chrY. Ignored if --chrY not set"
 	)
 }
 
@@ -149,8 +157,9 @@ assertOptOutFile <- function( optName, file, force= NA ) {
 			file.remove(file)
 		}
 	}
-	if (! isSamePath( getwd(),  dirname(file))) {
-		assertOptOutDir( optName, dirname(file), force )
+	pathTo <- dirname(file)
+	if ( ! dir.exists( pathTo ) || ! isSamePath( getwd(), pathTo)) {
+		assertOptOutDir( optName, pathTo, force )
 	}
 	TRUE
 }
@@ -222,6 +231,30 @@ ensureOpt_keep <- function( opts ) {
 	setOpt( opts, optName, tags)
 }
 
+ensureOpt_chrY <- function( opts ) {
+	optName <- "chrY"
+	optValue <- getRawOpt( opts, optName )
+	
+	if (optValue == "NA" || nchar(optValue) < 1) {
+		optValue <- NA
+	}
+	setOpt( opts, optName, optValue )
+}
+
+ensureOpt_summaryFileNoY <- function( opts ) {
+	optName <- "summaryFileNoY"
+	optValue  <- getRawOpt( opts, optName )
+	chrY <- getOpt( opts, "chrY" )
+	if (is.na(chrY)) {
+		optValue <- NA
+	}
+	else {
+		force <- getOpt( opts, "force" )
+		assertOptOutFile( optName, optValue, force)
+	}
+	setOpt( opts, optName, optValue)
+}
+
 #' Validate CLI options
 #'
 #' Validates (and possibly transforms) command line options. Halts with error on the first invalid option
@@ -266,7 +299,9 @@ validateOptions <- function(
 	validOpts <- ensureOpt_goodGenesFile(  validOpts )
 	validOpts <- ensureOpt_summaryFile(    validOpts )
 	validOpts <- ensureOpt_keep(           validOpts )
-
+	validOpts <- ensureOpt_chrY(           validOpts )
+	validOpts <- ensureOpt_summaryFileNoY( validOpts )
+	
 	# Report on unvalidated options, if required.
 	# (Extra "validOpts" added during validation are fine)
 	if ( unvalidated == "warning" || unvalidated  == "error" ) {
@@ -304,9 +339,6 @@ validateOptions <- function(
 #' @examples
 parseCLI <- function( args= commandArgs( trailingOnly= TRUE )) {
 	myPackage <- packageName()
-	if (is.null(myPackage)) {
-		myPackage <- "lowcover"
-	}
 	desc <- packageDescription( myPackage )
 	
 	parser <- initParser( desc )
@@ -318,7 +350,7 @@ parseCLI <- function( args= commandArgs( trailingOnly= TRUE )) {
 	# generate is saved as the value of the `help` option, and this is returned.
 	wantHelp <- any(args %in% c("-h", "--help"))
 	if (wantHelp) {
-		helpMessage <- paste( capture.output( parser ), collapse= "\n" ) 
+		helpMessage <- paste( capture.output( print(parser), type="message" ), collapse= "\n" ) 
 		return( list( "help"= helpMessage ))
 	}
 

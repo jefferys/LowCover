@@ -10,7 +10,10 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1
 Imports: 
-    GenomicRanges
+    GenomicRanges,
+    argparser,
+    checkmate,
+    utils
 Suggests: 
     spelling,
     testthat (>= 3.0.0),

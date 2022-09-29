@@ -4,3 +4,5 @@ chr1	200	300	gene_B
 chr1	290	400	gene_C
 chr2	10	50	gene_D
 chr2	40	100	gene_D
+chrY	0	100	gene_YE
+chrY	600	700	gene_YF
