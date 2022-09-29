@@ -1,6 +1,6 @@
 Package: lowcover
 Title: Low coverage reporting
-Version: 0.0.0
+Version: 0.0.1
 Authors@R: 
     person("Stuart R.", "Jefferys", , "srjefferys@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-6259-085X"))
