@@ -1,4 +1,4 @@
-lowcoverStats  <- function( targets, regions, chrY= NA ) {
+stats  <- function( targets, regions, chrY= NA ) {
 	if (! is.na(chrY)) {
 		targets <- targets[ GenomicRanges::seqnames(targets) != chrY ]
 		regions <- regions[ GenomicRanges::seqnames(regions) != chrY ]
@@ -25,7 +25,7 @@ lowcoverStats  <- function( targets, regions, chrY= NA ) {
 	)
 }
 
-#' Run lowcover as an application
+#' Run LowCover as an application
 #'
 #' @param args Character vector of command line parameters, by default will
 #' get them from the command line used to start the R session in which this
@@ -34,7 +34,7 @@ lowcoverStats  <- function( targets, regions, chrY= NA ) {
 #' @return N/A - run as an app that saves everything to files
 #'
 #' @export
-lowcoverApp <- function( args= commandArgs( trailingOnly= TRUE )) {
+LowCoverApp <- function( args= commandArgs( trailingOnly= TRUE )) {
 	opts <- parseCLI( args )
 	if ( length(opts$help) > 0) {
 		cat( opts$help )
@@ -49,9 +49,9 @@ lowcoverApp <- function( args= commandArgs( trailingOnly= TRUE )) {
 	targetGR <- loadBed( opts$targetsFile, colnames = c( "seqname", "start", "end", "geneName" ))
 	coverageGR <- loadBed( opts$coverageFile, colnames = c( "seqname", "start", "end", "coverTag" ))
 	select <- coverageGR$coverTag %in% opts$keep
-	lowCoverageGR <- coverageGR[ select ]
+	LowCoverageGR <- coverageGR[ select ]
 	
-	regionsGR <- groupedIntersect(targetGR, lowCoverageGR, "geneName" )
+	regionsGR <- groupedIntersect(targetGR, LowCoverageGR, "geneName" )
 	
 	saveBed( regionsGR, opts$regionsFile, strand= FALSE )
 	badGenes <- unique( regionsGR$geneName )
@@ -69,10 +69,10 @@ lowcoverApp <- function( args= commandArgs( trailingOnly= TRUE )) {
 		writeLines( goodGenes, opts$goodGenesFile )
 	}
 	
-	stats <- lowcoverStats( targetGR, regionsGR )
+	stats <- stats( targetGR, regionsGR )
 	writeLines( paste( names(stats), stats, sep="\t" ),  opts$summaryFile )
 	if ( ! is.na(opts$chrY)) {
-		stats <- lowcoverStats( targetGR, regionsGR, chrY= opts$chrY )
+		stats <- stats( targetGR, regionsGR, chrY= opts$chrY )
 		writeLines( paste( names(stats), stats, sep="\t" ),  opts$summaryFileNoY )
 	}
 }

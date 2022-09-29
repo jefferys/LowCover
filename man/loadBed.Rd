@@ -36,7 +36,7 @@ use 1-based positions.
 }
 \examples{
 # Sample bed detail file
-bed6File <- system.file( "extdata", "bed6.bed", package = "lowcover" )
+bed6File <- system.file( "extdata", "bed6.bed", package = "LowCover" )
 readLines(bed6File)
 
 # Load location information only, use a (default) strand of '*'
@@ -54,7 +54,7 @@ gr <- loadBed( bed6File, colnames= mapCols)
 gr
 
 # Load bed-like file with header and 1 based location column info
-bed6LikeFile <- system.file( "extdata", "bed6like.txt", package = "lowcover" )
+bed6LikeFile <- system.file( "extdata", "bed6like.txt", package = "LowCover" )
 readLines(bed6LikeFile)
 
 mapCols <- c("seqname", "start", "end", "strand", "score", "id")

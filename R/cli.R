@@ -32,23 +32,23 @@ defineInterface <- function( parser ) {
 		help= "Create any non-existing directories and overwrite any existing files."
 	)
 	parser <- argparser::add_argument(
-		parser, "--regionsFile", short="-r", default="lowcover.regions.bed",
+		parser, "--regionsFile", short="-r", default="LowCover.regions.bed",
 		help= "Bed4 file of regions with low coverage (column #4 = gene name)"
 	)
 	parser <- argparser::add_argument(
-		parser, "--badGenesFile", short= "-b", default="lowcover.badgenes.txt",
+		parser, "--badGenesFile", short= "-b", default="LowCover.badgenes.txt",
 		help= "Text file listing  genes with at least 1 base with low coverage (one per line)"
 	)
 	parser <- argparser::add_argument(
-		parser, "--goodGenesFile", short= "-g", default="lowcover.goodgenes.txt",
+		parser, "--goodGenesFile", short= "-g", default="LowCover.goodgenes.txt",
 		help= "Text file listing genes with no low covage (one per line)"
 	)
 	parser <- argparser::add_argument(
-		parser, "--summaryFile", short= "-s", default="lowcover.summary.tsv",
+		parser, "--summaryFile", short= "-s", default="LowCover.summary.tsv",
 		help= "Stats table"
 	)
 	parser <- argparser::add_argument(
-		parser, "--summaryFileNoY", short= "-S", default="lowcover.summaryNoY.tsv",
+		parser, "--summaryFileNoY", short= "-S", default="LowCover.summaryNoY.tsv",
 		help= "Stats table ignoring chrY. Ignored if --chrY not set"
 	)
 }

@@ -16,10 +16,10 @@ withr::with_dir( runDir, {
 					targetsFile="targets.bed",
 					coverageFile="coverage.bed",
 					force=FALSE,
-					regionsFile="lowcover.regions.bed",
-					goodGenesFile="lowcover.goodgenes.txt",
-					badGenesFile="lowcover.badgenes.txt",
-					summaryFile="lowcover.summary.tsv",
+					regionsFile="LowCover.regions.bed",
+					goodGenesFile="LowCover.goodgenes.txt",
+					badGenesFile="LowCover.badgenes.txt",
+					summaryFile="LowCover.summary.tsv",
 					keep=c("NO_COVERAGE", "LOW_COVERAGE")
 				)
 				wantNames <- sort(names(want))
@@ -32,7 +32,7 @@ withr::with_dir( runDir, {
 				expect_true( is.na( got$chrY ))
 				expect_equal( gotRaw$chrY, "NA" )
 				expect_true( is.na( got$summaryFileNoY ))
-				expect_equal( gotRaw$summaryFileNoY, "lowcover.summaryNoY.tsv" )
+				expect_equal( gotRaw$summaryFileNoY, "LowCover.summaryNoY.tsv" )
 				
 				# clean and sort for direct  comparison
 				got$chrY <- NULL

@@ -5,11 +5,11 @@ makeDat <- function( name ) {
 		runDir= dir,
 		targetFile= file.path( dir, "targets.bed" ),
 		coverageFile= file.path( dir, "coverage.bed" ),
-		regionsFile= file.path( dir, "lowcover.regions.bed" ),
-		badGenesFile= file.path( dir, "lowcover.badgenes.txt" ),
-		goodGenesFile= file.path( dir, "lowcover.goodgenes.txt" ),
-		summaryFile= file.path( dir, "lowcover.summary.tsv"),
-		summaryFileNoY= file.path( dir, "lowcover.summaryNoY.tsv")
+		regionsFile= file.path( dir, "LowCover.regions.bed" ),
+		badGenesFile= file.path( dir, "LowCover.badgenes.txt" ),
+		goodGenesFile= file.path( dir, "LowCover.goodgenes.txt" ),
+		summaryFile= file.path( dir, "LowCover.summary.tsv"),
+		summaryFileNoY= file.path( dir, "LowCover.summaryNoY.tsv")
 	)
 }
 
@@ -18,15 +18,15 @@ coverageGR <- loadBed( system.file("extdata", "coverage.bed", package= packageNa
 targetsGR <- loadBed( system.file("extdata", "targets.bed", package= packageName() ),
 					   c("seqnames", "start", "end", "genes"))
 
-describe( "lowcoverApp() test runs", {
+describe( "LowCoverApp() test runs", {
 	describe( "Complex data, keep Y", {
-		dat <- makeDat( "test_lowcover_complex_withY" )
+		dat <- makeDat( "test_LowCover_complex_withY" )
 		withr::with_dir( dat$runDir, {
 			saveBed( coverageGR, dat$coverageFile, strand= FALSE )
 			saveBed( targetsGR, dat$targetFile, strand= FALSE )
 			
 			cli <- c("-t", dat$targetFile, "--coverageFile", dat$coverageFile, "--chrY", "NA")
-			expect_silent(lowcoverApp( cli ))
+			expect_silent(LowCoverApp( cli ))
 			
 			it( "Creates expected files", {
 				expect_true( file.exists( dat$regionsFile ))
@@ -70,13 +70,13 @@ describe( "lowcoverApp() test runs", {
 		})
 	})
 	describe( "Complex data, drop Y", {
-		dat <- makeDat( "test_lowcover_complex_dropY" )
+		dat <- makeDat( "test_LowCover_complex_dropY" )
 		withr::with_dir( dat$runDir, {
 			saveBed( coverageGR, dat$coverageFile, strand= FALSE )
 			saveBed( targetsGR, dat$targetFile, strand= FALSE )
 			
 			cli <- c("-t", dat$targetFile, "--coverageFile", dat$coverageFile, "--chrY", "chrY")
-			expect_silent(lowcoverApp( cli ))
+			expect_silent(LowCoverApp( cli ))
 			
 			it( "Creates expected files", {
 				expect_true( file.exists( dat$regionsFile ))
@@ -129,14 +129,14 @@ describe( "lowcoverApp() test runs", {
 		})
 	})
 	describe( "No low genes", {
-		dat <- makeDat( "test_lowcover_noLow" )
+		dat <- makeDat( "test_LowCover_noLow" )
 		withr::with_dir( dat$runDir, {
 			mcols(coverageGR)["tag"] <- rep.int("HI_COVERAGE", length(coverageGR))
 			saveBed( coverageGR, dat$coverageFile, strand= FALSE )
 			saveBed( targetsGR, dat$targetFile, strand= FALSE )
 
 			cli <- c("-t", dat$targetFile, "--coverageFile", dat$coverageFile, "--chrY", "chrY")
-			expect_silent(lowcoverApp( cli ))
+			expect_silent(LowCoverApp( cli ))
 			
 			it( "Creates expected files", {
 				expect_true( file.exists( dat$regionsFile ))
@@ -178,7 +178,7 @@ describe( "lowcoverApp() test runs", {
 		})
 	})
 	describe( "No good genes", {
-		dat <- makeDat( "test_lowcover_all_low" )
+		dat <- makeDat( "test_LowCover_all_low" )
 		withr::with_dir( dat$runDir, {
 			saveBed( targetsGR, dat$targetFile, strand= FALSE )
 			coverageGR <- targetsGR
@@ -186,7 +186,7 @@ describe( "lowcoverApp() test runs", {
 			saveBed( coverageGR, dat$coverageFile, strand= FALSE )
 			
 			cli <- c("-t", dat$targetFile, "--coverageFile", dat$coverageFile, "--chrY", "chrY")
-			expect_silent(lowcoverApp( cli ))
+			expect_silent(LowCoverApp( cli ))
 			
 			it( "Creates expected files", {
 				expect_true( file.exists( dat$regionsFile ))

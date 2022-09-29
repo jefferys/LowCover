@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/reference/test_package.html#special-files
 
 library(testthat)
-library(lowcover)
+library(LowCover)
 
-test_check("lowcover")
+test_check("LowCover")
