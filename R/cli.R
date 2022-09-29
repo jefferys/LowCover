@@ -4,16 +4,20 @@ initParser <- function( desc ) {
 
 defineInterface <- function( parser ) {
 	parser <- argparser::add_argument(
+		parser, "--help", short= "-h", flag= TRUE,
+		help= "Show this help message and exit."
+	)
+	parser <- argparser::add_argument(
 		parser, "--version", short= "-V", flag= TRUE,
 		help= "Print version info to stderr and exit."
 	)
 	parser <- argparser::add_argument(
 		parser, "--targetsFile", short="-t", default="targets.bed",
-		help= "[Required] Bed4 file of target regions to limit coverage reporting to (colum #4 = gene name), gzipped ok."
+		help= "Bed4 file of target regions to limit coverage reporting to (colum #4 = gene name), gzipped ok."
 	)
 	parser <- argparser::add_argument(
 		parser, "--coverageFile", short="-c", default="coverage.bed",
-		help= "[Required] Bed4 file reporting regions and their coverage class (column #4 = coverage tag), gzipped ok."
+		help= "Bed4 file reporting regions and their coverage class (column #4 = coverage tag), gzipped ok."
 	)
 	parser <- argparser::add_argument(
 		parser, "--keep", short="-k", default="NO_COVERAGE,LOW_COVERAGE",
