@@ -1,6 +1,8 @@
 # LowCover
 Identifies low coverage in selected genomic regions (e.g. genes) based on mosdepth-like coverage info (e.g. genome wide coverage annotation).
 
+## Running locally
+
 ### Install package
 Can be installed from GitHub within R if you have `BiocManager` and `remotes` installed
 
@@ -10,10 +12,7 @@ Can be installed from GitHub within R if you have `BiocManager` and `remotes` in
 > BiodManager::install("Jefferys/LowCover")
 ```
 
-The main function `LowCoverApp()` is designed to be called from a script,
-as it automatically loads the R script command line parameters and parses them,
-but it can be run in an R session by passing command line options and values
-as a vector, e.g.:
+The main function `LowCoverApp()` is designed to be called from a script, as it automatically loads the R script command line parameters and parses them, but it can be run in an R session by passing command line options and values as a vector, e.g.:
 
 ```
 > LowCoverApp( c( "--targetsFile", "targets.bed",
@@ -24,7 +23,7 @@ as a vector, e.g.:
 
 Designed to be called from a shim script *you create*, e.g.
 
-**LowCover.sh**
+**LowCover**
 
 ```sh
 !/usr/bin/env Rscript
@@ -34,19 +33,20 @@ LowCover::LowCoverApp()
 
 ### Running the script
 
-Running this is then done from the shell command line like a normal program,
-generally passing `--targetsFile` and `--coverageFile`
+Running this is done from the shell command line like a normal program, generally passing `--targetsFile` and `--coverageFile`.
 
 ```sh
-$ LowCover.sh --targetFile "targets.bed" --coverageFile "mozdepth.coverage.gz"
+$ LowCover --targetFile "targets.bed" --coverageFile "mozdepth.coverage.gz"
 ```
+
+You can copy this script somewhere on your path to make it globally available.
 
 ### Options
 
 Help is available, e.g.
 
 ```sh
-$ LowCover.sh --help
+$ LowCover --help
 ```
 
 Which currently returns
@@ -91,3 +91,11 @@ optional arguments:
   -S, --summaryFileNoY  Stats table ignoring chrY. Ignored if --chrY
                         not set [default: LowCover.summaryNoY.tsv]
 ```
+
+## Running containerized
+
+### Docker
+
+Change to the Docker directory and use `docker build ...` in the normal way to build the container. You can copy the Docker directory anywhere to build, it needs only the contents of this directory.
+
+Run using `docker run ... `, mounting the directory with input data and the working directory where output files will be written. The normal `LowCover <options>` command can be run as described above, or a shell can be run and then LowCover run within that.

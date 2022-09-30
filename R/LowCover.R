@@ -75,4 +75,5 @@ LowCoverApp <- function( args= commandArgs( trailingOnly= TRUE )) {
 		stats <- stats( targetGR, regionsGR, chrY= opts$chrY )
 		writeLines( paste( names(stats), stats, sep="\t" ),  opts$summaryFileNoY )
 	}
+	invisible(NULL)
 }
