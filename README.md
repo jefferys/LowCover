@@ -1,10 +1,9 @@
 # LowCover
 Identifies low coverage in selected genomic regions (e.g. genes) based on mosdepth-like coverage info (e.g. genome wide coverage annotation).
 
-## Running locally
+## Installing the LowCover package
 
-### Install package
-Can be installed from GitHub within R if you have `BiocManager` and `remotes` installed
+LowCover can be installed from GitHub within R if you have `BiocManager` and `remotes` installed
 
 ```R
 > # install.packages("BiocManager")
@@ -12,16 +11,22 @@ Can be installed from GitHub within R if you have `BiocManager` and `remotes` in
 > BiodManager::install("Jefferys/LowCover")
 ```
 
+## Running LowCover
+
+LowCover is an R package with a "CLI" wrapper function. This allows it to be used from within R, run  from a local script, or executed within a container.
+
+### Running from within R
+
 The main function `LowCoverApp()` is designed to be called from a script, as it automatically loads the R script command line parameters and parses them, but it can be run in an R session by passing command line options and values as a vector, e.g.:
 
-```
-> LowCoverApp( c( "--targetsFile", "targets.bed",
-                  "--coverageFile", "mozdepth.coverage.gz" ))
+```R
+LowCoverApp( c( "--targetsFile", "targets.bed",
+                "--coverageFile", "mozdepth.coverage.gz" ))
 ```
 
-### Creating a script
+### Running locally from a script
 
-Designed to be called from a shim script *you create*, e.g.
+Create a script (or copy it from the `Docker` directory)
 
 **LowCover**
 
@@ -31,8 +36,6 @@ Designed to be called from a shim script *you create*, e.g.
 LowCover::LowCoverApp()
 ```
 
-### Running the script
-
 Running this is done from the shell command line like a normal program, generally passing `--targetsFile` and `--coverageFile`.
 
 ```sh
@@ -41,12 +44,67 @@ $ LowCover --targetFile "targets.bed" --coverageFile "mozdepth.coverage.gz"
 
 You can copy this script somewhere on your path to make it globally available.
 
-### Options
+### Running using a container
+
+You can use a pre-existing docker container or build you own
+
+#### Getting the docker container from quay.io
+
+```shell
+docker login quay.io
+docker pull `quay.io/unclineberger/jefferys/lowcover:latest`
+```
+
+#### Building your own Docker container
+
+Assumes you have docker, and that the contents of the Docker directory from the LowCover repository is available locally.
+
+```shell
+cd Docker
+docker build  -t <local name> .
+```
+
+This builds a container named `<local name>:<tag>`, e.g. `lowcover:latest`
+
+#### Running with Docker
+
+Running involves simply running LowCover in the Docker container. For example
+
+```shell
+docker run -it --rm -v `pwd`:`pwd`, -w `pwd` LowCover \
+    --targetFile "targets.bed" --coverageFile "mozdepth.coverage.gz"
+```
+
+#### Running with Singularity
+
+To run with singularity, convert to a singularity file and run that. You can either pull to a sif directly from quay.io
+
+```shell
+singularity login quay.io
+singlualrity pull docker://quay.io/unclineberger/jefferys/lowcover:latest <local name>:<tag>
+```
+
+or convert a local container with
+
+```shell
+singlualrity pull docker-daemon://quay.io/unclineberger/jefferys/lowcover:latest <local name>:<tag>
+```
+
+The sif will be named `<local name>_<tag>.sif`
+
+Then run it with singularity
+
+```shell
+singularity run --B `pwd`:`pwd`, --pwd `pwd` LowCover \
+    --targetFile "targets.bed" --coverageFile "mozdepth.coverage.gz"
+```
+
+## LowCover options
 
 Help is available, e.g.
 
-```sh
-$ LowCover --help
+```shell
+LowCover --help
 ```
 
 Which currently returns
@@ -91,11 +149,3 @@ optional arguments:
   -S, --summaryFileNoY  Stats table ignoring chrY. Ignored if --chrY
                         not set [default: LowCover.summaryNoY.tsv]
 ```
-
-## Running containerized
-
-### Docker
-
-Change to the Docker directory and use `docker build ...` in the normal way to build the container. You can copy the Docker directory anywhere to build, it needs only the contents of this directory.
-
-Run using `docker run ... `, mounting the directory with input data and the working directory where output files will be written. The normal `LowCover <options>` command can be run as described above, or a shell can be run and then LowCover run within that.
