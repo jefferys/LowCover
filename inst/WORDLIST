@@ -2,6 +2,7 @@ CLI
 GRanges
 GRangesList
 GenomicRanges
+LowCoverApp
 ORCID
 Unvalidated
 argparser
