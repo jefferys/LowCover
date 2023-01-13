@@ -15,13 +15,15 @@ Imports:
     argparser,
     checkmate,
     utils,
-    methods
+    methods,
+    future
 Suggests: 
     knitr,
     rmarkdown,
     spelling,
     testthat (>= 3.0.0),
-    withr
+    withr,
+    mockthat
 Config/testthat/edition: 3
 Language: en-US
 VignetteBuilder: knitr

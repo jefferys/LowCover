@@ -9,7 +9,7 @@ defineInterface <- function( parser ) {
 	)
 	parser <- argparser::add_argument(
 		parser, "--targetsFile", short="-t", default="targets.bed",
-		help= "Bed4 file of target regions to limit coverage reporting to (colum #4 = gene name), gzipped ok."
+		help= "Bed4 file of target regions to limit coverage reporting to (column #4 = gene name), gzipped ok."
 	)
 	parser <- argparser::add_argument(
 		parser, "--coverageFile", short="-c", default="coverage.bed",
@@ -29,25 +29,52 @@ defineInterface <- function( parser ) {
 	)
 	parser <- argparser::add_argument(
 		parser, "--regionsFile", short="-r", default="LowCover.regions.bed",
-		help= "Bed4 file of regions with low coverage (column #4 = gene name)"
+		help= "Bed4 file of regions with low coverage (column #4 = gene name)."
 	)
 	parser <- argparser::add_argument(
 		parser, "--badGenesFile", short= "-b", default="LowCover.badgenes.txt",
-		help= "Text file listing  genes with at least 1 base with low coverage (one per line)"
+		help= "Text file listing genes with at least 1 base with low coverage (one per line)."
 	)
 	parser <- argparser::add_argument(
 		parser, "--goodGenesFile", short= "-g", default="LowCover.goodgenes.txt",
-		help= "Text file listing genes with no low covage (one per line)"
+		help= "Text file listing genes with no low coverage (one per line)."
 	)
 	parser <- argparser::add_argument(
 		parser, "--summaryFile", short= "-s", default="LowCover.summary.tsv",
-		help= "Stats table"
+		help= "Stats table as a tab-delimited file."
 	)
 	parser <- argparser::add_argument(
 		parser, "--summaryFileNoY", short= "-S", default="LowCover.summaryNoY.tsv",
-		help= "Stats table ignoring chrY. Ignored if --chrY not set"
+		help= "Stats table ignoring chrY. Only if --chrY is set."
+	)
+	parser <- argparser::add_argument(
+		parser, "--parallel", short= "-p", default= "default",
+		help= paste(
+			"How to parallelize. Uses the 'future' R package. One of 'default',",
+			"'guess', 'multicore', 'multisession', or 'sequential' where:",
+			"'default' = Uses the plan set before running LowCover,",
+			"or as defined by the R options used by `future`.",
+			"'guess' = Chooses 'multicore' if supported, otherwise choose 'multisession'.",
+			"'multicore' = Fork separately to each core/worker. May not not be supported.",
+			"'multisession' = One R session per core/worker.",
+			"'sequential' = Do not run in parallel; uses just one core/worker.",
+			sep= " "
+		)
+	)
+	parser <- argparser::add_argument(
+		parser, "--workers", short= "-w", default= NA_integer_,
+		help= paste(
+			"In parallel mode, set this to limit workers/cpus. By default all",
+			"available cpus as determined by future::availableCores() are used.",
+			"Note: this is ignored if --parallel is either unset, 'default', or",
+			"'sequential'.",
+			sep= " "
+		)
 	)
 }
+
+parallelLevels <- c( 'default',      'guess',     'multicore',
+					 'multisession', 'sequential' )
 
 getRawOpt <- function( opts, optName ) {
 	if ( ! "rawOpts" %in% names(opts)) {
@@ -73,11 +100,11 @@ setOpt <- function( opts, optName, optValue ) {
 }
 
 optError <- function( optName, optValue, message ) {
-	stop( "--", optName, " ", optValue, "\n\t", message, call. = FALSE )
+	stop( " --", optName, " ", optValue, "\n\t", message, call. = FALSE )
 }
 
 optWarning <- function( optName, optValue, message ) {
-	warning( "--", optName, " ", optValue, "\n\t", message, call. = FALSE )
+	warning( " --", optName, " ", optValue, "\n\t", message, call. = FALSE )
 }
 
 assertOptInFile <- function( optName,  optValue ) {
@@ -254,6 +281,48 @@ ensureOpt_summaryFileNoY <- function( opts ) {
 	setOpt( opts, optName, optValue)
 }
 
+ensureOpt_parallel <- function( opts ) {
+	optName <- "parallel"
+	optValue  <- tolower( getRawOpt( opts, optName ))
+
+	if (optValue == "guess") {
+		if (future::supportsMulticore()) {
+			optValue <- "multicore"
+		}
+		else {
+			optValue <- "multisession"
+		}
+	}
+
+	if (! optValue %in% parallelLevels) {
+		optError( optName, getRawOpt( opts, optName ),
+				  "Not a valid value for this option; see --help." )
+	}
+
+	setOpt( opts, optName, optValue)
+}
+
+ensureOpt_workers <- function( opts ) {
+	optName <- "workers"
+	optValue  <- getRawOpt( opts, optName )
+	
+	if ( ! is.na( optValue )) {
+		if ( getOpt( opts, "parallel" )  %in% c("default", "sequential" )) {
+			optWarning( optName, getRawOpt( opts, optName ), paste0(
+				"Ignored with --parallel '", getRawOpt( opts, "parallel" ), "'." ))
+			optValue <- NA_integer_
+		}
+		else {
+			maxCores <- future::availableCores()
+			optValue <- as.integer(optValue)
+			if (optValue <= 0 || optValue > maxCores) {
+				optValue <- maxCores
+			}
+		}
+	}
+	setOpt( opts, optName, optValue )
+}
+
 #' Validate CLI options
 #'
 #' Validates (and possibly transforms) command line options. Halts with error on
@@ -306,6 +375,8 @@ validateOptions <- function(
 	validOpts <- ensureOpt_keep(           validOpts )
 	validOpts <- ensureOpt_chrY(           validOpts )
 	validOpts <- ensureOpt_summaryFileNoY( validOpts )
+	validOpts <- ensureOpt_parallel(       validOpts )
+	validOpts <- ensureOpt_workers(        validOpts )
 	
 	# Report on unvalidated options, if required.
 	# (Extra "validOpts" added during validation are fine)

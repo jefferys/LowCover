@@ -45,6 +45,15 @@ LowCoverApp <- function( args= commandArgs( trailingOnly= TRUE )) {
 		return()
 	}
 	
+	# Set parallel plan,
+	if (opts$parallel == "sequential") {
+		oldPlan <- future::plan( "sequential" )
+		on.exit( future::plan( oldPlan ), add= TRUE )
+	}
+	else if (opts$parallel != "default") {
+		oldPlan <- future::plan( opts$parallel, workers= opts$workers )
+		on.exit( future::plan( oldPlan ), add= TRUE )
+	}
 	
 	targetGR <- loadBed( opts$targetsFile, colnames = c( "seqname", "start", "end", "geneName" ))
 	coverageGR <- loadBed( opts$coverageFile, colnames = c( "seqname", "start", "end", "coverTag" ))

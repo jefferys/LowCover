@@ -54,7 +54,7 @@ groupedIntersect <- function( x, y, group, simplify= TRUE ) {
 		}
 		stop( message )
 	}
-	result <- GenomicRanges::GRangesList(unlist(tapply( x, group, intersect, y)))
+	result <- GenomicRanges::GRangesList(unlist(future.apply::future_tapply( x, group, intersect, y)))
 	if (simplify) {
 		result <- unlist( result, recursive= TRUE, use.names= TRUE )
 		GenomicRanges::mcols(result)[, groupName] <- names(result)

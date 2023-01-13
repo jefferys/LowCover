@@ -7,49 +7,72 @@ coverageFile <- file.path(runDir, "coverage.bed")
 file.create( coverageFile )
 withr::with_dir( runDir, {
 	describe( "Command line parsing", {
+		it( "identifies unknown paramaters when specified", {
+			cli <- c( '--whatIsThis', "some value" )
+			wantErrRE <- "Undefined argument labels supplied"
+			wantMsgRE <- "Argument '--whatIsThis' is not a defined optional argument or flag"
+			expect_message(
+				expect_error( parseCLI( cli ), wantErrRE),
+				wantMsgRE
+			)
+		})
 		describe( "default behavior", {
-			it( "will parse without error", {
+			it( "command line with no options parses without error", {
 				expect_silent( parseCLI() )
 			})
-			it( "Has correct defaults for all options, including rawOpts", {
-				want <- list(
-					targetsFile="targets.bed",
-					coverageFile="coverage.bed",
-					force=FALSE,
-					regionsFile="LowCover.regions.bed",
-					goodGenesFile="LowCover.goodgenes.txt",
-					badGenesFile="LowCover.badgenes.txt",
-					summaryFile="LowCover.summary.tsv",
-					keep=c("NO_COVERAGE", "LOW_COVERAGE")
+			it( "Has the expected default 'raw' options", {
+				wantRaw <- list(
+					targetsFile=    "targets.bed",
+					coverageFile=   "coverage.bed",
+					force=          FALSE,
+					regionsFile=    "LowCover.regions.bed",
+					goodGenesFile=  "LowCover.goodgenes.txt",
+					badGenesFile=   "LowCover.badgenes.txt",
+					summaryFile=    "LowCover.summary.tsv",
+					summaryFileNoY= "LowCover.summaryNoY.tsv",
+					keep=           "NO_COVERAGE,LOW_COVERAGE",
+					chrY=           "NA",
+					parallel=       "default",
+					workers=        NA_integer_
 				)
-				wantNames <- sort(names(want))
-				want <- want[wantNames]
 				got <- parseCLI()
 				gotRaw <- got$rawOpts
-				
-				# Can compare with NA values, so check and remove
-				# (both opt and opt$rawOpts have to be checked)
-				expect_true( is.na( got$chrY ))
-				expect_equal( gotRaw$chrY, "NA" )
-				expect_true( is.na( got$summaryFileNoY ))
-				expect_equal( gotRaw$summaryFileNoY, "LowCover.summaryNoY.tsv" )
-				
-				# clean and sort for direct  comparison
-				got$chrY <- NULL
-				gotRaw$chrY <- NULL
-				got$summaryFileNoY <- NULL
-				gotRaw$summaryFileNoY <- NULL
+				expect_equal( sort(names(gotRaw)), sort(names(wantRaw)))
+				for (opt in names(gotRaw)) {
+					if (opt %in% c("workers")) {
+						expect_true( is.na( gotRaw[[opt]] ), label= opt)
+					}
+					else {
+						expect_equal( gotRaw[[opt]], wantRaw[[opt]], label= opt )
+					}
+				}
+			})
+			it( "Has the expected default 'parsed' options", {
+				want <- list(
+					targetsFile=    "targets.bed",
+					coverageFile=   "coverage.bed",
+					force=          FALSE,
+					regionsFile=    "LowCover.regions.bed",
+					goodGenesFile=  "LowCover.goodgenes.txt",
+					badGenesFile=   "LowCover.badgenes.txt",
+					summaryFile=    "LowCover.summary.tsv",
+					summaryFileNoY= NA, # as chrY is NA.
+					keep=           c("NO_COVERAGE", "LOW_COVERAGE"),
+					chrY=           NA,
+					parallel=       "default",
+					workers=        NA_integer_
+				)
+				got <- parseCLI()
 				got$rawOpts <- NULL
-				gotNames <- sort(names(got))
-				got <- got[gotNames]
-				gotRaw <- gotRaw[sort(names(gotRaw))]
-				
-				expect_equal(got,want)
-
-				# Fix raw content				
-				wantRaw <- want
-				wantRaw$keep <- paste0( wantRaw$keep, collapse= ",")
-				expect_equal(gotRaw,wantRaw)
+				expect_equal( sort(names(got)), sort(names(want)))
+				for (opt in names(got)) {
+					if (anyNA(got[[opt]])) {
+						expect_true( is.na( want[[opt]] ), label = opt)
+					}
+					else {
+						expect_equal( got[[opt]], want[[opt]], label = opt)
+					}
+				}
 			})
 		})
 		describe( "--targetsFile (-t)", {
@@ -381,5 +404,79 @@ withr::with_dir( runDir, {
 				expect_match( got$help, desc$Description )
 			})
 		})
+		describe(  "--parallel", {
+			it( "Long opt changes option value", {
+				cli <- c('--parallel', "sequential")
+				got <- parseCLI( cli )
+				expect_equal( got$parallel, "sequential" )
+			})
+			it( "Short opt changes option value", {
+				cli <- c('-p', "multisession")
+				got <- parseCLI( cli )
+				expect_equal( got$parallel, "multisession" )
+			})
+			it( "Converts upper-case to lower case", {
+				cli <- c('-p', "MultiSession")
+				got <- parseCLI( cli )
+				expect_equal( got$parallel, "multisession" )
+			})
+			it( "Error (with original case) if invalid strategies are suggested.", {
+				cli <- c('-p', "NotTheStrategy")
+				wantErrRE <- " --parallel NotTheStrategy.+Not a valid value for this option; see --help\\."
+				expect_error( parseCLI( cli ), wantErrRE )
+			})
+			it( "It replaces 'guess' with a strategy based on 'future::supportsMulticore", {
+				cli <- c('-p', "guess")
+				mockthat::with_mock( `future::supportsMulticore` = function(...) TRUE, {
+					got <- parseCLI( cli )
+					expect_equal( got$parallel, "multicore" )
+				})
+				mockthat::with_mock( `future::supportsMulticore` = function(...) FALSE, {
+					got <- parseCLI( cli )
+					expect_equal( got$parallel, "multisession" )
+				})
+			})
+		})
+		describe(  "--workers", {
+			mockthat::with_mock( `future::availableCores` = function(...) 2, {
+				it( "Long opt changes option value", {
+					cli <- c('--parallel', 'multisession', '--workers', '1')
+					got <- parseCLI( cli )
+					expect_equal( got$workers, 1 )
+				})
+				it( "Short opt changes option value", {
+					cli <- c('-p', 'multisession', '-w', '1')
+					got <- parseCLI( cli )
+					expect_equal( got$workers, 1 )
+				})
+				it( "warning that it is ignored when --parallel is unset, 'default' or 'sequential'", {
+					cli <- c('-w', '10')
+					wantWarnRE <- " --workers 10.+Ignored with --parallel 'default'\\."
+					expect_warning( parseCLI( cli ), wantWarnRE )
+
+					cli <- c('-p', 'default', '--workers', '1')
+					wantWarnRE <- " --workers 1.+Ignored with --parallel 'default'\\."
+					expect_warning( parseCLI( cli ), wantWarnRE )
+					
+					cli <- c('--parallel', 'sequential', '-w', '-1')
+					wantWarnRE <- " --workers -1.+Ignored with --parallel 'sequential'\\."
+					expect_warning( parseCLI( cli ), wantWarnRE )
+				})
+				it( "replaces values <= 0 or > max with max = 'future::availableCores()'", {
+					cli <- c('--parallel', 'multisession', '--workers', '0')
+					got <- parseCLI( cli )
+					expect_equal( got$workers, 2 )  # availableCores() is mocked
+					
+					cli <- c('-w', '-102', '-p', 'multicore')
+					got <- parseCLI( cli )
+					expect_equal( got$workers, 2 )  # availableCores() is mocked
+					
+					cli <- c('-w', '102', '-p', 'multisession')
+					got <- parseCLI( cli )
+					expect_equal( got$workers, 2 )  # availableCores() is mocked
+				})
+			})
+		})
+		
 	})
 })
