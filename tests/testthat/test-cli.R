@@ -1,19 +1,22 @@
 
-runDir <- tempfile("test-cli")
-dir.create(runDir)
-targetFile <- file.path(runDir, "targets.bed")
-file.create( targetFile )
-coverageFile <- file.path(runDir, "coverage.bed")
-file.create( coverageFile )
-withr::with_dir( runDir, {
-	describe( "Command line parsing", {
+describe( "Command line parsing with parseCLI()", {
+
+	runDir <- tempfile("test-cli")
+	dir.create(runDir)
+	targetFile <- file.path(runDir, "targets.bed")
+	file.create( targetFile )
+	coverageFile <- file.path(runDir, "coverage.bed")
+	file.create( coverageFile )
+	withr::with_dir( runDir, {
 		it( "identifies unknown paramaters when specified", {
 			cli <- c( '--whatIsThis', "some value" )
 			wantErrRE <- "Undefined argument labels supplied"
 			wantMsgRE <- "Argument '--whatIsThis' is not a defined optional argument or flag"
 			expect_message(
-				expect_error( parseCLI( cli ), wantErrRE),
-				wantMsgRE
+				expect_error(
+					parseCLI( cli ),
+					wantErrRE
+				), wantMsgRE
 			)
 		})
 		describe( "default behavior", {
@@ -449,15 +452,18 @@ withr::with_dir( runDir, {
 					got <- parseCLI( cli )
 					expect_equal( got$workers, 1 )
 				})
-				it( "warning that it is ignored when --parallel is unset, 'default' or 'sequential'", {
+				it( "Ignored with warning if --parallel is unset", {
 					cli <- c('-w', '10')
 					wantWarnRE <- " --workers 10.+Ignored with --parallel 'default'\\."
 					expect_warning( parseCLI( cli ), wantWarnRE )
-
+				})
+				it( "Ignored with warning if --parallel is 'default'", {
+						
 					cli <- c('-p', 'default', '--workers', '1')
 					wantWarnRE <- " --workers 1.+Ignored with --parallel 'default'\\."
 					expect_warning( parseCLI( cli ), wantWarnRE )
-					
+				})	
+				it( "Ignored with warning if --parallel is 'sequential'", {
 					cli <- c('--parallel', 'sequential', '-w', '-1')
 					wantWarnRE <- " --workers -1.+Ignored with --parallel 'sequential'\\."
 					expect_warning( parseCLI( cli ), wantWarnRE )

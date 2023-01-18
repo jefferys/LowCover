@@ -237,4 +237,469 @@ describe( "LowCoverApp() test runs", {
 			})
 		})
 	})
+	describe( "Using parallel features", {
+		describe( "--parallel = 'default'", {
+			dat <- makeDat( "test_LowCover_complex_parallel_withY" )
+			withr::with_dir( dat$runDir, {
+				saveBed( coverageGR, dat$coverageFile, strand= FALSE )
+				saveBed( targetsGR, dat$targetFile, strand= FALSE )
+				
+				cli <- c( "-t",             dat$targetFile,
+						  "--coverageFile", dat$coverageFile,
+						  "--chrY",         "NA",
+						  "--parallel",     "default" )
+				expect_silent(LowCoverApp( cli ))
+				
+				it( "Creates expected files", {
+					expect_true( file.exists( dat$regionsFile ))
+					expect_true( file.exists( dat$badGenesFile ))
+					expect_true( file.exists( dat$goodGenesFile ))
+					expect_true( file.exists( dat$summaryFile ))
+					expect_false( file.exists( dat$summaryFileNoY ))
+				})
+				it( "The regions file contents are correct", {
+					got <- readLines( dat$regionsFile )
+					want <- c(
+						"chr1\t10\t25\tgene_A",
+						"chr1\t200\t250\tgene_A",
+						"chr1\t200\t250\tgene_B",
+						"chr1\t290\t300\tgene_B",
+						"chr1\t290\t310\tgene_C",
+						"chr2\t10\t45\tgene_D",
+						"chrY\t0\t100\tgene_YE"
+					)
+					expect_equal(got, want)
+				})
+				it( "The good genes file contents are correct", {
+					got <- readLines( dat$goodGenesFile )
+					want <- c( "gene_YF" )
+					expect_equal(got, want)
+				})
+				it( "The bad genes file contents are correct", {
+					got <- readLines( dat$badGenesFile )
+					want <- c( "gene_A", "gene_B", "gene_C", "gene_D", "gene_YE" )
+					expect_equal(got, want)
+				})
+				it( "The summary file contents are correct", {
+					got <- read.delim( dat$summaryFile, header = FALSE)
+					wantNames <- c( "bases",    "lowBases",    "coveredBaseRat",
+									"segments", "lowSegments", "coveredSegmentRat",
+									"genes",    "lowGenes",    "coveredGeneRat" )
+					expect_equal( got[,1], wantNames )
+					wantValues <- c( 630,220,(630-220)/630,5,5,0,6,5,(6-5)/6 )
+					expect_equal( got[,2], wantValues )
+				})
+			})
+		})
+		describe( "--parallel = 'sequential'", {
+			dat <- makeDat( "test_LowCover_complex_sequential_dropY" )
+			withr::with_dir( dat$runDir, {
+				saveBed( coverageGR, dat$coverageFile, strand= FALSE )
+				saveBed( targetsGR, dat$targetFile, strand= FALSE )
+				
+				cli <- c( "-t", dat$targetFile,
+						  "--coverageFile", dat$coverageFile,
+						  "--chrY", "chrY",
+						  "--parallel", "sequential" )
+				
+				expect_silent(LowCoverApp( cli ))
+				
+				it( "Creates expected files", {
+					expect_true( file.exists( dat$regionsFile ))
+					expect_true( file.exists( dat$badGenesFile ))
+					expect_true( file.exists( dat$goodGenesFile ))
+					expect_true( file.exists( dat$summaryFile ))
+					expect_true( file.exists( dat$summaryFileNoY ))
+				})
+				it( "The regions file contents are correct", {
+					got <- readLines( dat$regionsFile )
+					want <- c(
+						"chr1\t10\t25\tgene_A",
+						"chr1\t200\t250\tgene_A",
+						"chr1\t200\t250\tgene_B",
+						"chr1\t290\t300\tgene_B",
+						"chr1\t290\t310\tgene_C",
+						"chr2\t10\t45\tgene_D",
+						"chrY\t0\t100\tgene_YE"
+					)
+					expect_equal(got, want)
+				})
+				it( "The good genes file contents are correct", {
+					got <- readLines( dat$goodGenesFile )
+					want <- c( "gene_YF" )
+					expect_equal(got, want)
+				})
+				it( "The bad genes file contents are correct", {
+					got <- readLines( dat$badGenesFile )
+					want <- c( "gene_A", "gene_B", "gene_C", "gene_D", "gene_YE" )
+					expect_equal(got, want)
+				})
+				it( "The summary file contents are correct", {
+					got <- read.delim( dat$summaryFile, header = FALSE,)
+					wantNames <- c( "bases",    "lowBases",    "coveredBaseRat",
+									"segments", "lowSegments", "coveredSegmentRat",
+									"genes",    "lowGenes",    "coveredGeneRat" )
+					expect_equal( got[,1], wantNames )
+					wantValues <- c( 630,220,(630-220)/630,5,5,0,6,5,(6-5)/6 )
+					expect_equal( got[,2], wantValues )
+				})
+				it( "The summary file excluding Y contents are correct", {
+					got <- read.delim( dat$summaryFileNoY, header = FALSE,)
+					wantNames <- c( "bases",    "lowBases",    "coveredBaseRat",
+									"segments", "lowSegments", "coveredSegmentRat",
+									"genes",    "lowGenes",    "coveredGeneRat" )
+					expect_equal( got[,1], wantNames )
+					wantValues <- c( 430,120,(430-120)/430,3,4,(3-4)/3,4,4,0 )
+					expect_equal( got[,2], wantValues )
+				})
+			})
+		})
+		describe( "--parallel = 'multisession', default workers", {
+			dat <- makeDat( "test_LowCover_complex_multisession_withY" )
+			withr::with_dir( dat$runDir, {
+				saveBed( coverageGR, dat$coverageFile, strand= FALSE )
+				saveBed( targetsGR, dat$targetFile, strand= FALSE )
+				
+				cli <- c( "-t",             dat$targetFile,
+						  "--coverageFile", dat$coverageFile,
+						  "--chrY",         "NA",
+						  "-p",     "multisession" )
+				expect_silent(LowCoverApp( cli ))
+				
+				it( "Creates expected files", {
+					expect_true( file.exists( dat$regionsFile ))
+					expect_true( file.exists( dat$badGenesFile ))
+					expect_true( file.exists( dat$goodGenesFile ))
+					expect_true( file.exists( dat$summaryFile ))
+					expect_false( file.exists( dat$summaryFileNoY ))
+				})
+				it( "The regions file contents are correct", {
+					got <- readLines( dat$regionsFile )
+					want <- c(
+						"chr1\t10\t25\tgene_A",
+						"chr1\t200\t250\tgene_A",
+						"chr1\t200\t250\tgene_B",
+						"chr1\t290\t300\tgene_B",
+						"chr1\t290\t310\tgene_C",
+						"chr2\t10\t45\tgene_D",
+						"chrY\t0\t100\tgene_YE"
+					)
+					expect_equal(got, want)
+				})
+				it( "The good genes file contents are correct", {
+					got <- readLines( dat$goodGenesFile )
+					want <- c( "gene_YF" )
+					expect_equal(got, want)
+				})
+				it( "The bad genes file contents are correct", {
+					got <- readLines( dat$badGenesFile )
+					want <- c( "gene_A", "gene_B", "gene_C", "gene_D", "gene_YE" )
+					expect_equal(got, want)
+				})
+				it( "The summary file contents are correct", {
+					got <- read.delim( dat$summaryFile, header = FALSE)
+					wantNames <- c( "bases",    "lowBases",    "coveredBaseRat",
+									"segments", "lowSegments", "coveredSegmentRat",
+									"genes",    "lowGenes",    "coveredGeneRat" )
+					expect_equal( got[,1], wantNames )
+					wantValues <- c( 630,220,(630-220)/630,5,5,0,6,5,(6-5)/6 )
+					expect_equal( got[,2], wantValues )
+				})
+			})
+		})
+		describe( "--parallel = 'multisession', with (1) workers", {
+			dat <- makeDat( "test_LowCover_complex_multisession_1_withY" )
+			withr::with_dir( dat$runDir, {
+				saveBed( coverageGR, dat$coverageFile, strand= FALSE )
+				saveBed( targetsGR, dat$targetFile, strand= FALSE )
+				
+				cli <- c( "-t",             dat$targetFile,
+						  "--coverageFile", dat$coverageFile,
+						  "--chrY",         "NA",
+						  "--parallel",     "multisession",
+						  "-w",             1)
+				expect_silent(LowCoverApp( cli ))
+				
+				it( "Creates expected files", {
+					expect_true( file.exists( dat$regionsFile ))
+					expect_true( file.exists( dat$badGenesFile ))
+					expect_true( file.exists( dat$goodGenesFile ))
+					expect_true( file.exists( dat$summaryFile ))
+					expect_false( file.exists( dat$summaryFileNoY ))
+				})
+				it( "The regions file contents are correct", {
+					got <- readLines( dat$regionsFile )
+					want <- c(
+						"chr1\t10\t25\tgene_A",
+						"chr1\t200\t250\tgene_A",
+						"chr1\t200\t250\tgene_B",
+						"chr1\t290\t300\tgene_B",
+						"chr1\t290\t310\tgene_C",
+						"chr2\t10\t45\tgene_D",
+						"chrY\t0\t100\tgene_YE"
+					)
+					expect_equal(got, want)
+				})
+				it( "The good genes file contents are correct", {
+					got <- readLines( dat$goodGenesFile )
+					want <- c( "gene_YF" )
+					expect_equal(got, want)
+				})
+				it( "The bad genes file contents are correct", {
+					got <- readLines( dat$badGenesFile )
+					want <- c( "gene_A", "gene_B", "gene_C", "gene_D", "gene_YE" )
+					expect_equal(got, want)
+				})
+				it( "The summary file contents are correct", {
+					got <- read.delim( dat$summaryFile, header = FALSE)
+					wantNames <- c( "bases",    "lowBases",    "coveredBaseRat",
+									"segments", "lowSegments", "coveredSegmentRat",
+									"genes",    "lowGenes",    "coveredGeneRat" )
+					expect_equal( got[,1], wantNames )
+					wantValues <- c( 630,220,(630-220)/630,5,5,0,6,5,(6-5)/6 )
+					expect_equal( got[,2], wantValues )
+				})
+			})
+		})
+		describe( "--parallel = 'guess', default workers", {
+			dat <- makeDat( "test_LowCover_complex_guess_dropY" )
+			withr::with_dir( dat$runDir, {
+				saveBed( coverageGR, dat$coverageFile, strand= FALSE )
+				saveBed( targetsGR, dat$targetFile, strand= FALSE )
+				
+				cli <- c( "-t", dat$targetFile,
+						  "--coverageFile", dat$coverageFile,
+						  "--chrY", "chrY",
+						  "-p", "guess" )
+				
+				expect_silent(LowCoverApp( cli ))
+				
+				it( "Creates expected files", {
+					expect_true( file.exists( dat$regionsFile ))
+					expect_true( file.exists( dat$badGenesFile ))
+					expect_true( file.exists( dat$goodGenesFile ))
+					expect_true( file.exists( dat$summaryFile ))
+					expect_true( file.exists( dat$summaryFileNoY ))
+				})
+				it( "The regions file contents are correct", {
+					got <- readLines( dat$regionsFile )
+					want <- c(
+						"chr1\t10\t25\tgene_A",
+						"chr1\t200\t250\tgene_A",
+						"chr1\t200\t250\tgene_B",
+						"chr1\t290\t300\tgene_B",
+						"chr1\t290\t310\tgene_C",
+						"chr2\t10\t45\tgene_D",
+						"chrY\t0\t100\tgene_YE"
+					)
+					expect_equal(got, want)
+				})
+				it( "The good genes file contents are correct", {
+					got <- readLines( dat$goodGenesFile )
+					want <- c( "gene_YF" )
+					expect_equal(got, want)
+				})
+				it( "The bad genes file contents are correct", {
+					got <- readLines( dat$badGenesFile )
+					want <- c( "gene_A", "gene_B", "gene_C", "gene_D", "gene_YE" )
+					expect_equal(got, want)
+				})
+				it( "The summary file contents are correct", {
+					got <- read.delim( dat$summaryFile, header = FALSE,)
+					wantNames <- c( "bases",    "lowBases",    "coveredBaseRat",
+									"segments", "lowSegments", "coveredSegmentRat",
+									"genes",    "lowGenes",    "coveredGeneRat" )
+					expect_equal( got[,1], wantNames )
+					wantValues <- c( 630,220,(630-220)/630,5,5,0,6,5,(6-5)/6 )
+					expect_equal( got[,2], wantValues )
+				})
+				it( "The summary file excluding Y contents are correct", {
+					got <- read.delim( dat$summaryFileNoY, header = FALSE,)
+					wantNames <- c( "bases",    "lowBases",    "coveredBaseRat",
+									"segments", "lowSegments", "coveredSegmentRat",
+									"genes",    "lowGenes",    "coveredGeneRat" )
+					expect_equal( got[,1], wantNames )
+					wantValues <- c( 430,120,(430-120)/430,3,4,(3-4)/3,4,4,0 )
+					expect_equal( got[,2], wantValues )
+				})
+			})
+		})
+		describe( "--parallel = 'guess', with (1) workers", {
+			dat <- makeDat( "test_LowCover_complex_guess_1_dropY" )
+			withr::with_dir( dat$runDir, {
+				saveBed( coverageGR, dat$coverageFile, strand= FALSE )
+				saveBed( targetsGR, dat$targetFile, strand= FALSE )
+				
+				cli <- c( "-t", dat$targetFile,
+						  "--coverageFile", dat$coverageFile,
+						  "--chrY", "chrY",
+						  "--parallel", "guess",
+						  "--workers",    1 )
+				
+				expect_silent(LowCoverApp( cli ))
+				
+				it( "Creates expected files", {
+					expect_true( file.exists( dat$regionsFile ))
+					expect_true( file.exists( dat$badGenesFile ))
+					expect_true( file.exists( dat$goodGenesFile ))
+					expect_true( file.exists( dat$summaryFile ))
+					expect_true( file.exists( dat$summaryFileNoY ))
+				})
+				it( "The regions file contents are correct", {
+					got <- readLines( dat$regionsFile )
+					want <- c(
+						"chr1\t10\t25\tgene_A",
+						"chr1\t200\t250\tgene_A",
+						"chr1\t200\t250\tgene_B",
+						"chr1\t290\t300\tgene_B",
+						"chr1\t290\t310\tgene_C",
+						"chr2\t10\t45\tgene_D",
+						"chrY\t0\t100\tgene_YE"
+					)
+					expect_equal(got, want)
+				})
+				it( "The good genes file contents are correct", {
+					got <- readLines( dat$goodGenesFile )
+					want <- c( "gene_YF" )
+					expect_equal(got, want)
+				})
+				it( "The bad genes file contents are correct", {
+					got <- readLines( dat$badGenesFile )
+					want <- c( "gene_A", "gene_B", "gene_C", "gene_D", "gene_YE" )
+					expect_equal(got, want)
+				})
+				it( "The summary file contents are correct", {
+					got <- read.delim( dat$summaryFile, header = FALSE,)
+					wantNames <- c( "bases",    "lowBases",    "coveredBaseRat",
+									"segments", "lowSegments", "coveredSegmentRat",
+									"genes",    "lowGenes",    "coveredGeneRat" )
+					expect_equal( got[,1], wantNames )
+					wantValues <- c( 630,220,(630-220)/630,5,5,0,6,5,(6-5)/6 )
+					expect_equal( got[,2], wantValues )
+				})
+				it( "The summary file excluding Y contents are correct", {
+					got <- read.delim( dat$summaryFileNoY, header = FALSE,)
+					wantNames <- c( "bases",    "lowBases",    "coveredBaseRat",
+									"segments", "lowSegments", "coveredSegmentRat",
+									"genes",    "lowGenes",    "coveredGeneRat" )
+					expect_equal( got[,1], wantNames )
+					wantValues <- c( 430,120,(430-120)/430,3,4,(3-4)/3,4,4,0 )
+					expect_equal( got[,2], wantValues )
+				})
+			})
+		})
+		
+		# Work-around for skip not being limited to a code block!!!
+		if (future::supportsMulticore()) {
+			describe( "--parallel = 'multicore', default workers", {
+				skip_if_not( future::supportsMulticore(),
+							 "Multicore not supported" )
+				dat <- makeDat( "test_LowCover_complex_multicore_withY" )
+				withr::with_dir( dat$runDir, {
+					saveBed( coverageGR, dat$coverageFile, strand= FALSE )
+					saveBed( targetsGR, dat$targetFile, strand= FALSE )
+					
+					cli <- c( "-t",             dat$targetFile,
+							  "--coverageFile", dat$coverageFile,
+							  "--chrY",         "NA",
+							  "-p",     "multicore" )
+					expect_silent(LowCoverApp( cli ))
+					
+					it( "Creates expected files", {
+						expect_true( file.exists( dat$regionsFile ))
+						expect_true( file.exists( dat$badGenesFile ))
+						expect_true( file.exists( dat$goodGenesFile ))
+						expect_true( file.exists( dat$summaryFile ))
+						expect_false( file.exists( dat$summaryFileNoY ))
+					})
+					it( "The regions file contents are correct", {
+						got <- readLines( dat$regionsFile )
+						want <- c(
+							"chr1\t10\t25\tgene_A",
+							"chr1\t200\t250\tgene_A",
+							"chr1\t200\t250\tgene_B",
+							"chr1\t290\t300\tgene_B",
+							"chr1\t290\t310\tgene_C",
+							"chr2\t10\t45\tgene_D",
+							"chrY\t0\t100\tgene_YE"
+						)
+						expect_equal(got, want)
+					})
+					it( "The good genes file contents are correct", {
+						got <- readLines( dat$goodGenesFile )
+						want <- c( "gene_YF" )
+						expect_equal(got, want)
+					})
+					it( "The bad genes file contents are correct", {
+						got <- readLines( dat$badGenesFile )
+						want <- c( "gene_A", "gene_B", "gene_C", "gene_D", "gene_YE" )
+						expect_equal(got, want)
+					})
+					it( "The summary file contents are correct", {
+						got <- read.delim( dat$summaryFile, header = FALSE)
+						wantNames <- c( "bases",    "lowBases",    "coveredBaseRat",
+										"segments", "lowSegments", "coveredSegmentRat",
+										"genes",    "lowGenes",    "coveredGeneRat" )
+						expect_equal( got[,1], wantNames )
+						wantValues <- c( 630,220,(630-220)/630,5,5,0,6,5,(6-5)/6 )
+						expect_equal( got[,2], wantValues )
+					})
+				})
+			})
+			describe( "--parallel = 'multicore', with (1) workers", {
+				dat <- makeDat( "test_LowCover_complex_multicore_1_withY" )
+				withr::with_dir( dat$runDir, {
+					saveBed( coverageGR, dat$coverageFile, strand= FALSE )
+					saveBed( targetsGR, dat$targetFile, strand= FALSE )
+					
+					cli <- c( "-t",             dat$targetFile,
+							  "--coverageFile", dat$coverageFile,
+							  "--chrY",         "NA",
+							  "--parallel",     "multicore",
+							  "-w",             1)
+					expect_silent(LowCoverApp( cli ))
+					
+					it( "Creates expected files", {
+						expect_true( file.exists( dat$regionsFile ))
+						expect_true( file.exists( dat$badGenesFile ))
+						expect_true( file.exists( dat$goodGenesFile ))
+						expect_true( file.exists( dat$summaryFile ))
+						expect_false( file.exists( dat$summaryFileNoY ))
+					})
+					it( "The regions file contents are correct", {
+						got <- readLines( dat$regionsFile )
+						want <- c(
+							"chr1\t10\t25\tgene_A",
+							"chr1\t200\t250\tgene_A",
+							"chr1\t200\t250\tgene_B",
+							"chr1\t290\t300\tgene_B",
+							"chr1\t290\t310\tgene_C",
+							"chr2\t10\t45\tgene_D",
+							"chrY\t0\t100\tgene_YE"
+						)
+						expect_equal(got, want)
+					})
+					it( "The good genes file contents are correct", {
+						got <- readLines( dat$goodGenesFile )
+						want <- c( "gene_YF" )
+						expect_equal(got, want)
+					})
+					it( "The bad genes file contents are correct", {
+						got <- readLines( dat$badGenesFile )
+						want <- c( "gene_A", "gene_B", "gene_C", "gene_D", "gene_YE" )
+						expect_equal(got, want)
+					})
+					it( "The summary file contents are correct", {
+						got <- read.delim( dat$summaryFile, header = FALSE)
+						wantNames <- c( "bases",    "lowBases",    "coveredBaseRat",
+										"segments", "lowSegments", "coveredSegmentRat",
+										"genes",    "lowGenes",    "coveredGeneRat" )
+						expect_equal( got[,1], wantNames )
+						wantValues <- c( 630,220,(630-220)/630,5,5,0,6,5,(6-5)/6 )
+						expect_equal( got[,2], wantValues )
+					})
+				})
+			})
+		}
+	})
 })

@@ -45,13 +45,14 @@ LowCoverApp <- function( args= commandArgs( trailingOnly= TRUE )) {
 		return()
 	}
 	
-	# Set parallel plan,
-	if (opts$parallel == "sequential") {
-		oldPlan <- future::plan( "sequential" )
-		on.exit( future::plan( oldPlan ), add= TRUE )
-	}
-	else if (opts$parallel != "default") {
-		oldPlan <- future::plan( opts$parallel, workers= opts$workers )
+	# Set parallel plan and optional worker number if desired.
+	if (opts$parallel != "default") {
+		if (is.na(opts$workers)) {
+			oldPlan <- future::plan( opts$parallel )
+		}
+		else {
+			oldPlan <- future::plan( opts$parallel, workers= opts$workers )
+		}
 		on.exit( future::plan( oldPlan ), add= TRUE )
 	}
 	
